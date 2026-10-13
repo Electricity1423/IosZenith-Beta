@@ -30,7 +30,8 @@ jobs:
       - name: Fix script for macOS bash
         run: |
           sed -i '' 's/local EXTRA=()/local EXTRA=(--enable-pic)/' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
-          grep -n 'local EXTRA' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
+          sed -i '' '/--enable-lto/d' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
+          grep -n 'EXTRA=\|lto' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
       - name: Build ffmpeg
         run: |
           cd "$PROJ/ffmpeg-ios/scripts"
