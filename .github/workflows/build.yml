@@ -22,11 +22,18 @@ jobs:
           PROJ=$(cd "$(dirname "$FF")" && pwd)
           echo "PROJ=$PROJ" >> "$GITHUB_ENV"
           echo "Project root: $PROJ"
+      - name: Pin .NET 8
+        run: |
+          echo '{"sdk":{"version":"8.0.100","rollForward":"latestFeature"}}' > "$GITHUB_WORKSPACE/global.json"
+          echo '{"sdk":{"version":"8.0.100","rollForward":"latestFeature"}}' > "$PROJ/global.json"
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
       - name: Install iOS workload
-        run: dotnet workload install ios
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          dotnet --version
+          dotnet workload install ios
       - name: Fix script for macOS bash
         run: |
           sed -i '' 's/local EXTRA=()/local EXTRA=(--enable-pic)/' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
@@ -40,9 +47,10 @@ jobs:
       - name: Build app (unsigned)
         run: |
           cd "$PROJ"
+          dotnet --version
           dotnet build src/ZenithiOS/ZenithiOS.csproj -c Release -f net8.0-ios -r ios-arm64 \
             -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false \
-            -p:ValidateXcodeVersion=false
+            -p:ValidateXcodeVersion=false -p:CheckEolWorkloads=false -p:CheckEolTargetFramework=false
       - name: Package IPA
         run: |
           cd "$PROJ"
