@@ -27,6 +27,10 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Install iOS workload
         run: dotnet workload install ios
+      - name: Fix script for macOS bash
+        run: |
+          sed -i '' 's/local EXTRA=()/local EXTRA=(--enable-pic)/' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
+          grep -n 'local EXTRA' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
       - name: Build ffmpeg
         run: |
           cd "$PROJ/ffmpeg-ios/scripts"
