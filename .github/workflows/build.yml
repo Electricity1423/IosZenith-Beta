@@ -40,7 +40,12 @@ jobs:
           sed -i '' '/--enable-lto/d' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
           sed -i '' 's/UTType\.Data/UTType.CreateFromIdentifier("public.data")/' "$PROJ/src/ZenithiOS/UI/HomeViewController.cs"
           sed -i '' 's/UTType\.Audio/UTType.CreateFromIdentifier("public.audio")/' "$PROJ/src/ZenithiOS/UI/ExportViewController.cs"
-          grep -n 'CreateFromIdentifier' "$PROJ"/src/ZenithiOS/UI/*.cs
+          U=""
+          for f in version start wait is_running cancel read_log set_log_level make_fifo open_fifo_writer write_fully close_fd execute; do
+            U="$U -Wl,-u,_zenith_ffmpeg_$f"
+          done
+          sed -i '' -e 's#<ForceLoad>true</ForceLoad>#<ForceLoad>false</ForceLoad>#' -e "s#<LinkerFlags>-lz -lbz2 -liconv</LinkerFlags>#<LinkerFlags>-lz -lbz2 -liconv$U</LinkerFlags>#" "$PROJ/src/ZenithiOS/ZenithiOS.csproj"
+          grep -n 'ForceLoad\|LinkerFlags' "$PROJ/src/ZenithiOS/ZenithiOS.csproj"
       - name: Build ffmpeg
         run: |
           cd "$PROJ/ffmpeg-ios/scripts"
