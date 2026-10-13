@@ -34,11 +34,13 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           dotnet --version
           dotnet workload install ios
-      - name: Fix script for macOS bash
+      - name: Fix sources and scripts
         run: |
           sed -i '' 's/local EXTRA=()/local EXTRA=(--enable-pic)/' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
           sed -i '' '/--enable-lto/d' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
-          grep -n 'EXTRA=\|lto' "$PROJ/ffmpeg-ios/scripts/build-ffmpeg-ios.sh"
+          sed -i '' 's/UTType\.Data/UTType.CreateFromIdentifier("public.data")/' "$PROJ/src/ZenithiOS/UI/HomeViewController.cs"
+          sed -i '' 's/UTType\.Audio/UTType.CreateFromIdentifier("public.audio")/' "$PROJ/src/ZenithiOS/UI/ExportViewController.cs"
+          grep -n 'CreateFromIdentifier' "$PROJ"/src/ZenithiOS/UI/*.cs
       - name: Build ffmpeg
         run: |
           cd "$PROJ/ffmpeg-ios/scripts"
