@@ -7,8 +7,21 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
-      - name: Unzip project
-        run: unzip -q ZenithiOS.zip
+      - name: Locate project
+        run: |
+          echo "Repo contents:"
+          find . -maxdepth 3 -not -path './.git*' | head -50
+          ZIP=$(find . -iname '*zenith*.zip' -not -path './.git/*' | head -n 1)
+          if [ -n "$ZIP" ]; then
+            echo "Unzipping $ZIP"
+            rm -rf _unzipped && mkdir _unzipped
+            unzip -q "$ZIP" -d _unzipped
+          fi
+          FF=$(find . -type d -name ffmpeg-ios -not -path './.git/*' | head -n 1)
+          if [ -z "$FF" ]; then echo "ERROR: could not find ffmpeg-ios folder"; exit 1; fi
+          PROJ=$(cd "$(dirname "$FF")" && pwd)
+          echo "PROJ=$PROJ" >> "$GITHUB_ENV"
+          echo "Project root: $PROJ"
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
@@ -16,22 +29,22 @@ jobs:
         run: dotnet workload install ios
       - name: Build ffmpeg
         run: |
-          cd ZenithiOS/ffmpeg-ios/scripts
+          cd "$PROJ/ffmpeg-ios/scripts"
           chmod +x build-ffmpeg-ios.sh
           SLICES="device" ./build-ffmpeg-ios.sh
       - name: Build app (unsigned)
         run: |
-          cd ZenithiOS
+          cd "$PROJ"
           dotnet build src/ZenithiOS/ZenithiOS.csproj -c Release -f net8.0-ios -r ios-arm64 \
             -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false \
             -p:ValidateXcodeVersion=false
       - name: Package IPA
         run: |
-          cd ZenithiOS
+          cd "$PROJ"
           APP=$(find src/ZenithiOS/bin -name '*.app' -type d | head -n 1)
           rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
-          zip -qr ZenithMIDI-unsigned.ipa Payload
+          zip -qr "$GITHUB_WORKSPACE/ZenithMIDI-unsigned.ipa" Payload
       - uses: actions/upload-artifact@v4
         with:
           name: ZenithMIDI-unsigned-ipa
-          path: ZenithiOS/ZenithMIDI-unsigned.ipa
+          path: ZenithMIDI-unsigned.ipa
